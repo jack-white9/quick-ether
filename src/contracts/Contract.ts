@@ -75,22 +75,22 @@ export class Contract {
     return claimed;
   }
 
-  //!! FIXME: "SakuraPublicMint"
+  //!! FIXME: "templatePublicMint"
   public async mintPublicSale(amount: number, price: number): Promise<void> {
     this._validateContract();
     const cost = price * amount;
     const bigNumPrice = ethers.utils.parseUnits(cost.toString(), "ether");
-    await this.contract.SakuraPublicMint(amount, {
+    await this.contract.templatePublicMint(amount, {
       value: bigNumPrice,
     });
   }
 
-  //!! FIXME: "SakuraMintWhitelist"
+  //!! FIXME: "templateMintWhitelist"
   public async mintWhitelistSale(amount, price) {
     const proof = this.whitelist.getMerkleProof(this.account);
     const cost = price * amount;
     const bigNumPrice = ethers.utils.parseUnits(cost.toString(), "ether");
-    await this.contract.SakuraMintWhitelist(proof, {
+    await this.contract.templateMintWhitelist(proof, {
       value: bigNumPrice,
     });
   }
