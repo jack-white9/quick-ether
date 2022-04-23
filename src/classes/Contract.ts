@@ -1,7 +1,7 @@
 import ethers from "ethers";
-import { Whitelist } from "./Whitelist.js";
+import { whitelistHandler } from "./whitelistHandler";
 
-export class Contract {
+export class contract {
   contractAddress: string;
   abi: string[];
   whitelist: any;
@@ -13,7 +13,7 @@ export class Contract {
   constructor(contractAddress, abi, whitelistAddresses) {
     this.contractAddress = contractAddress;
     this.abi = abi;
-    this.whitelist = new Whitelist(whitelistAddresses);
+    this.whitelist = new whitelistHandler(whitelistAddresses);
     this.contract = null;
     this.provider = null;
     this.account = null;
@@ -87,17 +87,17 @@ export class Contract {
     return claimed;
   }
 
+  public async getTotalSupplyCount(): Promise<number> {
+    this._validateContract();
+    const total = await this.contract.MAX_SUPPLY();
+    return total;
+  }
+
   public async getRemainingSupplyCount(): Promise<number> {
     this._validateContract();
     const total = await this.contract.getTotal();
     const remaining = await this.contract.totalSupply(); // what data type is this returning as?
     return total.toNumber() - remaining.toNumber(); // are these .toNumber() necessary?
-  }
-
-  public async getTotalSupplyCount(): Promise<number> {
-    this._validateContract();
-    const total = await this.contract.MAX_SUPPLY();
-    return total;
   }
 
   private _setupContract(): void {

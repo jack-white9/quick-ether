@@ -1,7 +1,7 @@
 import MerkleTree from "merkletreejs";
 import keccak256 from "keccak256";
 
-export class Whitelist {
+export class whitelistHandler {
   constructor(whitelistAddresses) {
     this.whitelistAddresses = whitelistAddresses;
     const leafNodes = this.whitelistAddresses.map((addr) => keccak256(addr));
