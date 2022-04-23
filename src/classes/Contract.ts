@@ -34,32 +34,44 @@ export class Contract {
     this._validateContract();
   }
 
+  //!! FIXME: abstract away templateMintWhitelist and templatePublicMint 
+  public async mintToken(mintState: string, amount: number, price: number): Promise<void> {
+    this._validateContract();
+    const cost = price * amount;
+    const bigNumPrice = ethers.utils.parseUnits(cost.toString(), "ether");
+    
+    if (mintState === 'WHITELIST_SALE') {
+      const proof = this.whitelist.getMerkleProof(this.account);
+      await this.contract.templateMintWhitelist(proof, {
+        value: bigNumPrice,
+      });
+    } else if (mintState === 'PUBLIC_SALE') {
+      await this.contract.templatePublicMint(amount, {
+        value: bigNumPrice,
+      });    
+    }
+  }
+
   public async getMintState(): Promise<string> {
     this._validateContract();
     const state = await this.contract.saleState();
     return state;
   }
 
-  public async getPublicMaxMintAmount(): Promise<number> {
-    this._validateContract();
-    const maximumMintAmount = await this.contract.MAX_BATCH_MINT();
-    return maximumMintAmount.toNumber();
-  }
-
-  public async getPublicPrice(): Promise<string> {
-    const price = await this._checkPublicPrice(); // BigNumber object
+  public async getPrice(mintState: string): Promise<string> {
+    const price = await this._checkPrice(mintState);
     return ethers.utils.formatEther(price);
   }
 
-  public async getWhitelistMaxMintAmount(): Promise<number> {
+  public async getMaxMintAmount(mintState: string): Promise<number> {
     this._validateContract();
-    const maximumMintAmount = await this.contract.WHITELIST_MMA();
-    return maximumMintAmount.toNumber();
-  }
-
-  public async getWhitelistPrice(): Promise<string> {
-    let price = await this._checkWhitelistPrice(); // BigNumber object
-    return ethers.utils.formatEther(price);
+    if (mintState === "WHITELIST_SALE") {
+      const maximumMintAmount = await this.contract.WHITELIST_MMA();
+      return maximumMintAmount.toNumber();
+    } else if (mintState === "PUBLIC SALE") {
+      const maximumMintAmount = await this.contract.MAX_BATCH_MINT();
+      return maximumMintAmount.toNumber();
+    }
   }
 
   public getIsAddressWhitelisted(): boolean {
@@ -73,26 +85,6 @@ export class Contract {
     this._validateContract();
     const claimed = await this.contract.checkWhitelistClaimed();
     return claimed;
-  }
-
-  //!! FIXME: "templatePublicMint"
-  public async mintPublicSale(amount: number, price: number): Promise<void> {
-    this._validateContract();
-    const cost = price * amount;
-    const bigNumPrice = ethers.utils.parseUnits(cost.toString(), "ether");
-    await this.contract.templatePublicMint(amount, {
-      value: bigNumPrice,
-    });
-  }
-
-  //!! FIXME: "templateMintWhitelist"
-  public async mintWhitelistSale(amount, price) {
-    const proof = this.whitelist.getMerkleProof(this.account);
-    const cost = price * amount;
-    const bigNumPrice = ethers.utils.parseUnits(cost.toString(), "ether");
-    await this.contract.templateMintWhitelist(proof, {
-      value: bigNumPrice,
-    });
   }
 
   public async getRemainingSupplyCount(): Promise<number> {
@@ -128,16 +120,16 @@ export class Contract {
     console.log(`Signer: ${this.signer}`);
   }
 
-  private async _checkPublicPrice(): Promise<number> {
+  // ! Caution: returns bigNumber object
+  private async _checkPrice(mintState: string): Promise<number> {
     this._validateContract();
-    const price = await this.contract.SALE_PRICE();
-    return price; //!! Warning: returns bigNumber
-  }
-
-  private async _checkWhitelistPrice(): Promise<number> {
-    this._validateContract();
-    const price = await this.contract.WHITELIST_PRICE();
-    return price;
+    if (mintState === "WHITELIST_SALE") {
+      const price = await this.contract.WHITELIST_PRICE();
+      return price;
+    } else if (mintState === "PUBLIC_SALE") {
+      const price = await this.contract.SALE_PRICE();
+      return price;
+    }
   }
 
   private _validateProvider(): void {
